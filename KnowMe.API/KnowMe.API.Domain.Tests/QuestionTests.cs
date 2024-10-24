@@ -215,12 +215,14 @@ public class QuestionTests
         var question = Question.Create("Is this the real life?", false, questionVariants, user, gameResult).Value;
 
         question.RecordChoice(QuestionUserChoice.Create(user, question, [question.AnswerVariants.First(v => v.Notation == 'A')]).Value);
+        question.Answered.Should().BeFalse();
         question.RecordChoice(QuestionUserChoice.Create(user2, question, [question.AnswerVariants.First(v => v.Notation == 'A')]).Value);
+        question.Answered.Should().BeFalse();
 
 
         question.RecordGuess(QuestionUserGuess.Create(user, user2, question, [question.AnswerVariants.First(v => v.Notation == 'A')]).Value);
+        question.Answered.Should().BeFalse();
         question.RecordGuess(QuestionUserGuess.Create(user2, user, question, [question.AnswerVariants.First(v => v.Notation == 'A')]).Value);
-
         question.Answered.Should().BeTrue();
     }
 }

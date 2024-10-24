@@ -14,7 +14,11 @@ public class Question
     public Guid GameId { get; private set; }
     public List<QuestionUserChoice> UserChoices { get; private set; } = new List<QuestionUserChoice>();
     public List<QuestionUserGuess> UserGuesses { get; private set; } = new List<QuestionUserGuess>();
-    public bool Answered { get; private set; }
+
+    //This looks ok from domain perspective, but it should be done in transaction or some additional checks need to be performed
+    //to make sure it's not stuck without answered question if multiple people answer at same time
+    public bool Answered => UserGuesses.Count == Game.Players.Count * (Game.Players.Count - 1) &&
+                            UserChoices.Count == Game.Players.Count;
 
     public Result<Question> RecordChoice(QuestionUserChoice choice)
     {
@@ -54,14 +58,6 @@ public class Question
         }
 
         UserGuesses.Add(guess);
-
-        var peopleCount = Game.Players.Count;
-        var guessCount = peopleCount * (peopleCount - 1);
-
-        if (UserGuesses.Count == guessCount && UserChoices.Count == peopleCount)
-        {
-            Answered = true;
-        }
 
         return Result<Question>.Success(this);
     }

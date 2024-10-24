@@ -68,6 +68,70 @@ public class Game
         return Result<Game>.Success(this);
     }
 
+    public Result<Game> RecordChoice(User user, List<QuestionVariant> selectedVariants)
+    {
+        var currentQuestion = Questions.First(q => q.Id == CurrentQuestionId);
+        var choiceResult = QuestionUserChoice.Create(user, currentQuestion, selectedVariants);
+
+        if (!choiceResult.IsSuccess)
+        {
+            return Result<Game>.Failure(choiceResult.Errors!);
+        }
+
+        var addChoiceResult = currentQuestion.RecordChoice(choiceResult.Value);
+
+        if (!addChoiceResult.IsSuccess)
+        {
+            return Result<Game>.Failure(addChoiceResult.Errors!);
+        }
+
+        return Result<Game>.Success(this);
+    }
+
+    public Result<Game> RecordGuess(User guessingUser, User choiceUser, List<QuestionVariant> selectedVariants)
+    {
+        var currentQuestion = Questions.First(q => q.Id == CurrentQuestionId);
+        var guessResult = QuestionUserGuess.Create(guessingUser, choiceUser, currentQuestion, selectedVariants);
+
+        if (!guessResult.IsSuccess)
+        {
+            return Result<Game>.Failure(guessResult.Errors!);
+        }
+
+        var addGuessResult = currentQuestion.RecordGuess(guessResult.Value);
+
+        if (!addGuessResult.IsSuccess)
+        {
+            return Result<Game>.Failure(addGuessResult.Errors!);
+        }
+
+        AdvanceIfCurrentQuestionAnswered();
+
+        return Result<Game>.Success(this);
+    }
+
+    public void AdvanceIfCurrentQuestionAnswered()
+    {
+        var currentQuestion = Questions.First(q => q.Id == CurrentQuestionId);
+
+        if (currentQuestion.Answered)
+        {
+            var newQuestion = Questions.OrderBy(q => q.Id).FirstOrDefault(q => !q.Answered);
+
+            //If no new questions, game is finished
+            if (newQuestion is null)
+            {
+                Status = GameStatus.Ended;
+                //TODO Calculate total user scores
+                //TODO Add game ended domain event
+            }
+            else
+            {
+                CurrentQuestionId = newQuestion.Id;
+            }
+        }
+    }
+
     public void AddQuestion(Question question)
     {
         //TODO Domain event that question added
